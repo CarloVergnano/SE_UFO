@@ -30,12 +30,14 @@ class View:
         self.txt_titolo = ft.Text(value="Avvistamenti UFO", size=30, weight=ft.FontWeight.BOLD)
 
         # Riga 1
-        self.dd_year = ft.Dropdown(label="Anno", width=200)
-        self.dd_shape = ft.Dropdown(label="Forma", width=200)
+        self.dd_year = ft.Dropdown(label="Anno", width=200, on_change=self.controller.on_anno_change)
+        self.controller.populate_dd_anni()
+        self.dd_shape = ft.Dropdown(label="Forma", width=200, on_change=self.controller.on_forma_change)
+
         self.pulsante_graph = ft.ElevatedButton(text="Crea Grafo", on_click=self.controller.handle_graph)
 
         row1 = ft.Row([self.dd_year, self.dd_shape, self.pulsante_graph],alignment=ft.MainAxisAlignment.CENTER)
-        self.controller.populate_dd()
+
 
         self.lista_visualizzazione_1 = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
 
