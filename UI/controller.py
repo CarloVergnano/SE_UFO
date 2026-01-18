@@ -29,19 +29,19 @@ class Controller:
 
     def handle_graph(self, e):
         self.anno_selezionato = int(self._view.dd_year.value)
-        self.grafo = self._model.crea_grafo(int(self.anno_selezionato))
-        self.forme = self._model.get_forme(self.anno_selezionato)
+        self.forma_selezionata =  self._view.dd_shape.value
+        self.grafo = self._model.crea_grafo(int(self.anno_selezionato), self.forma_selezionata)
         num_nodi = self.grafo.number_of_nodes()
         num_rami = self.grafo.number_of_edges()
 
-        self._view.txt_out_squadre.controls.clear()
-        self._view.txt_out_squadre.controls.append(
-            ft.Text(f"Numero di vertici: {num_nodi}, numero di archi: {num_rami}")
+        self._view.lista_visualizzazione_1.controls.clear()
+        self._view.lista_visualizzazione_1.controls.append(
+            ft.Text(f"Numero di vertici: {num_nodi}. Numero di archi: {num_rami}")
         )
 
-        for team in self.teams:
-            self._view.txt_out_squadre.controls.append(
-                ft.Text(f"({team.team_code}) {team.name}")
+        for nodo, somma_pesi in self.grafo.degree(weight="weight"):
+            self._view.lista_visualizzazione_1.controls.append(
+                ft.Text(f"Nodo {nodo}, somma pesi su archi = {somma_pesi}")
             )
 
         self._view.update()

@@ -9,8 +9,7 @@ class Model:
         self.avvistamenti = {}
         self.stati = []
         self.forme = []
-        for o in self.stati:
-            self.avvistamenti[o.id] = o
+
 
 
     def get_anni(self):
@@ -23,27 +22,38 @@ class Model:
 
     def get_avvistamenti (self, anno, forma):
         self.avvistamenti = DAO.get_avvistamenti(anno, forma)
+        return self.avvistamenti
 
     def get_stati(self):
         self.stati = DAO.get_stati()
+        return self.stati
 
     def get_forme(self, anno):
         self.forme = DAO.get_forme(anno)
         return self.forme
 
-    def crea_grafo (self, anno, forma):
+    def crea_grafo(self, anno, forma):
         self.G.clear()
+
+        self.stati = DAO.get_stati()
+        for s in self.stati:
+            self.G.add_node(s.id)
+
+
         self.avvistamenti = DAO.get_avvistamenti(anno, forma)
+        print(self.avvistamenti)
+
         self.connessioni = DAO.get_connesioni()
-        peso1 = 0
-        peso2 = 0
+
         for c in self.connessioni:
-            for c.state1 in self.avvistamenti.keys():
-                peso1 = int(self.avvistamenti[c.state1])
-            for c.state2 in self.avvistamenti.keys():
-                peso2 = int (self.avvistamenti[c.state2])
-            peso = peso1 + peso2
-            self.G.add_edge(c.state1, c.state2, weight = peso)
+            s1 = c.state1
+            s2 = c.state2
+
+            peso = self.avvistamenti.get(s2, 0)
+
+
+            self.G.add_edge(s1, s2, weight=peso)
 
         return self.G
+
 
