@@ -1,89 +1,77 @@
 import flet as ft
+from database.DB_connect import DBConnect
 
 class Controller:
     def __init__(self, view, model):
         self._view = view
         self._model = model
+        self.anni = []
         self.anno_selezionato = None
+        self.forme = []
+        self.forma_selezionata = None
 
-    def on_anno_change(self, e):
-        if e.control.value is None:
+        self._connessione_db = DBConnect.get_connection()
+        if self._connessione_db is None:
+            self._view.show_alert("❌ Errore di connessione al database")
+
+    def populate_dd(self):
+        """ Metodo per popolare i dropdown """
+        if self._connessione_db is None:
+            self._view.show_alert("❌ Errore di connessione al database")
             return
-        self.anno_selezionato = int(e.control.value)
-        self.popola_dropdown_forme()
-
-    def populate_dd_anni(self):
-        """Popola il menu a tendina delle regioni."""
+        self.anni = self._model.get_anni()
         self._view.dd_year.options.clear()
-
-        anni = self._model.get_anni()
-
-        if anni:
-            for anno in anni:
-                self._view.dd_year.options.append(ft.dropdown.Option(key=anno, text=anno))
+        if self.anni:
+            for anno in self.anni:
+                self._view.dd_year.options.append(
+                    ft.dropdown.Option(anno, f"{anno}"))
         else:
-            self._view.show_alert("Errore nel caricamento anni.")
-
+            self._view.show_alert("Errore nel caricamento degli anni.")
         self._view.update()
 
+    def seleziona_anno(self, e):
+        self.anno_selezionato = self._view.dd_year.value
+        if self.anno_selezionato is None:
+            self._view.show_alert("Selezionare un anno.")
+            return
+
+        if self.anno_selezionato is not None:
+            self.forme = self._model.get_forme(self.anno_selezionato)
+            self._view.dd_shape.disabled = False
+            self._view.dd_shape.options.clear()
+            if len(self.forme) != 0:
+                for forma in self.forme:
+                    self._view.dd_shape.options.append(
+                        ft.dropdown.Option(forma, f"{forma}"))
+            else:
+                self._view.show_alert("Errore nel caricamento delle forme.")
+            self._view.update()
 
     def handle_graph(self, e):
-        self.anno_selezionato = int(self._view.dd_year.value)
-        self.forma_selezionata =  self._view.dd_shape.value
-        self.grafo = self._model.crea_grafo(int(self.anno_selezionato), self.forma_selezionata)
-        num_nodi = self.grafo.number_of_nodes()
-        num_rami = self.grafo.number_of_edges()
-
+        """ Handler per gestire creazione del grafo """
+        self.forma_selezionata = self._view.dd_shape.value
+        if self.forma_selezionata is None:
+            self._view.show_alert("Selezionare un forma.")
+            return
+        vertici, archi = self._model.crea_grafo(self.anno_selezionato, self.forma_selezionata)
         self._view.lista_visualizzazione_1.controls.clear()
-        self._view.lista_visualizzazione_1.controls.append(
-            ft.Text(f"Numero di vertici: {num_nodi}. Numero di archi: {num_rami}")
-        )
-
-        for nodo, somma_pesi in self.grafo.degree(weight="weight"):
+        self._view.lista_visualizzazione_1.controls.append(ft.Text(f"Numero di vertici: {vertici} - Numero di archi: {archi}"))
+        self._view.update()
+        risultati = (self._model.get_risultati())
+        for nodo, avvistamento in risultati:
             self._view.lista_visualizzazione_1.controls.append(
-                ft.Text(f"Nodo {nodo}, somma pesi su archi = {somma_pesi}")
-            )
-
+                ft.Text(f"{nodo} {avvistamento}"))
         self._view.update()
-
-
-    def on_forma_change(self, e):
-        self.forma_selezionata = e.control.value
-
-    def popola_dropdown_forme(self):
-
-        self._view.dd_shape.options.clear()
-
-
-
-        if self._view.dd_year.value is None:
-            self._view.show_alert("Seleziona prima un anno")
-            return
-
-        self.anno_selezionato = int(self._view.dd_year.value)
-
-
-        self.forme = self._model.get_forme(self.anno_selezionato)
-
-        if not self.forme:
-            self._view.show_alert("Nessuna forma trovata per l'anno selezionato")
-            return
-        if self.forme:
-            for forma in self.forme:
-                self._view.dd_shape.options.append(
-                    ft.dropdown.Option(
-                        key=forma,
-                        text=forma
-                )
-            )
-        else:
-            self._view.show_alert("Errore nel caricamento forme.")
-
-
-        self._view.update()
-
-
 
     def handle_path(self, e):
         """ Handler per gestire il problema ricorsivo di ricerca del cammino """
-        # TODO
+        best_solution, best_value = (self._model.calcola_percorso_ottimo())
+        self._view.lista_visualizzazione_2.controls.clear()
+        for i in range(len(best_solution) - 1):
+            u = best_solution[i]
+            v = best_solution[i + 1]
+
+            peso = self._model.G[u][v]["weight"]
+            self._view.lista_visualizzazione_2.controls.append(
+                ft.Text(f"{u} -> {v} | peso={peso}"))
+        self._view.update()
